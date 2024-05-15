@@ -19,18 +19,12 @@ def explode_qualifiers(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def events_feature_engineering(df : pd.DataFrame) -> pd.DataFrame:
-    """
-    The function `init_feature_engineering` calculates various features such as vertical length,
-    distance, angle, pass stats, and goal stats for a given DataFrame.
+    # event type
+    df['eventType'] = df['type'].apply(lambda x: x['displayName'])
+
+    # whether the event was sucessful or not
+    df['isSuccessful'] = df['outcomeType'].apply(lambda x: x['value'])
     
-    :param df: The code snippet you provided is a function init_feature_engineering that performs
-    feature engineering on a DataFrame df
-    - vertical length: Calculates the vertical length of a pass by subtracting the y-coordinate of the starting point from the y-coordinate of the ending point.
-    - distance: Calculates the distance of a pass using the Euclidean distance formula.
-    - angle: Calculates the angle of a pass using the arctan function.
-    - isSuccessful: Converts the outcomeType column to a binary value, where 1 indicates a successful pass.
-    - num_goals: Converts the eventType column to a binary value, where 1 indicates a goal event.
-    """
     # vertical length
     df['x_length'] = df['x'] - df['endX']
     df['y_length'] = df['y'] - df['endY']
@@ -40,9 +34,6 @@ def events_feature_engineering(df : pd.DataFrame) -> pd.DataFrame:
 
     # angle
     df['angle'] = np.round(np.arctan(df['y_length'] / df['x_length']),3)
-
-    # pass stats
-    df['isSuccessful'] = df['outcomeType'].apply(lambda x: int(x[-2]))
 
     # goal stats
     df['goal'] = df['eventType'].apply(lambda x: 1 if x == 'Goal' else 0)
@@ -62,8 +53,7 @@ def shots_feature_engineering(df : pd.DataFrame) -> pd.DataFrame:
     number of shots for each group, calculates the total number of shots for each 'jsonName', and then
     calculates the proportion of shots for each group. The function returns a
     """
-    shots = (df
-         .where(df['isShot'] == True)
+    shots = (df[df['isShot'] == True]
          .groupby(['jsonName', 'teamId', 'leagueSeason']).agg({'id': 'count'})
          .reset_index()
          .rename({'id' : 'num_shots'}, axis=1))
@@ -87,16 +77,15 @@ def goals_feature_engineering(df):
     columns 'num_goals', 'total_goals', 'proportion_goals', 'outcome', 'is_win', 'is_draw', and 'is_loss'.
     """
     goals = (df
-         .where(df['eventType'] == 'Goal')
-         .groupby(['jsonName', 'teamId', 'leagueSeason']).agg({'id': 'count'})
+         .groupby(['jsonName', 'teamId', 'leagueSeason']).agg({'goal': 'sum'})
          .reset_index()
-         .rename({'id' : 'num_goals'}, axis=1))
+         .rename({'goal' : 'num_goals'}, axis=1))
     goals['total_goals'] = goals.groupby(['jsonName'])['num_goals'].transform('sum')
-    goals['proportion_goals'] = np.round(goals['num_goals'] / goals['total_goals'], 2)
-    goals['outcome'] = np.where(goals['num_goals'] > goals['total_goals'] / 2, 2, np.where(goals['num_goals'] == goals['total_goals'] / 2, 1, 0))
-    goals['is_win'] = (goals['outcome'] == 3).astype(int)
-    goals['is_draw'] = (goals['outcome'] == 1).astype(int)
-    goals['is_loss'] = (goals['outcome'] == 0).astype(int)
+    goals['proportion_goals'] = np.round(goals['num_goals'] / goals['total_goals'], 2).fillna(0)
+    goals['outcome'] = np.where(goals['num_goals'] > (goals['total_goals'] / 2), 2, np.where(goals['num_goals'] < (goals['total_goals'] / 2), 1, 0))
+    goals['is_win'] = (goals['outcome'] == 2).astype(int)
+    goals['is_loss'] = (goals['outcome'] == 1).astype(int)
+    goals['is_draw'] = (goals['outcome'] == 0).astype(int)
     return goals
 
 def passes_feature_engineering(df : pd.DataFrame) -> pd.DataFrame:
