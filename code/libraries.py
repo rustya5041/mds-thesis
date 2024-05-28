@@ -10,10 +10,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.data import Data, DataLoader
 
-# vis
+# vis / eda
 import seaborn as sns
 import matplotlib.pyplot as plt
 from mplsoccer import Pitch
+import klib
+from summarytools import dfSummary
 
 # preprocessing
 from sklearn.preprocessing import StandardScaler

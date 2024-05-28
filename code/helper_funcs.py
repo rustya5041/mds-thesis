@@ -42,7 +42,7 @@ def pretify_json_data(directory: str) -> 'csv':
         for filename in filenames[i:i+200]:
             with open(filename) as f:
                 df = pd.concat([df, read_footy_json(f)])
-        df.to_parquet(f'epl_{c}.parquet')
+        df.to_parquet(f'data/epl_{c}.parquet')
         c += 1
     return 'Compilation completed'
 

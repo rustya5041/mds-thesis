@@ -1,7 +1,7 @@
 from libraries import *
 
 # directory where json data is stored
-data_dir = '/Users/rustya/thesis/data/WhoScored/events/*'
+data_dir = "C:/Users/rustya/Desktop/mds-thesis/data/WhoScored/events/*"
 
 merge_key = ['jsonName', 'teamId', 'leagueSeason']
 
